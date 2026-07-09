@@ -1,9 +1,20 @@
 
+import { useEffect } from 'react';
 import { useAppState, useAppActions } from '../../context/AppContext';
+import { useParticleEffects } from '../../hooks/useParticleEffects';
 
 export function SessionCompleteModal() {
   const { state } = useAppState();
   const { toggleBlindbox, completeBreakPhase, startWork, closeComplete } = useAppActions();
+  const { confetti } = useParticleEffects();
+
+  useEffect(() => {
+    if (state.showSessionComplete) {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      confetti(cx, cy, { count: 80, power: 9 });
+    }
+  }, [state.showSessionComplete, confetti]);
 
   if (!state.showSessionComplete) return null;
 

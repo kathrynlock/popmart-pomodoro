@@ -1,5 +1,7 @@
 
-import { useContext, useRef } from 'react';
+import { useContext } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { TaskStatus } from '../types';
 import { TaskCard } from './TaskCard';
 import { useAppState, useAppActions } from '../context/AppContext';
@@ -8,9 +10,9 @@ import { ParticleContext } from '../context/ParticleContext';
 interface TaskColumnProps {
   status: TaskStatus;
   columnIndex: number;
+  draggedTaskId: number | null;
   onDragStart: (id: number) => void;
   onDragEnd: () => void;
-  draggedTaskId: number | null;
 }
 
 const COLS = {
@@ -29,76 +31,24 @@ export function TaskColumn({
   const { state } = useAppState();
   const { moveTask, openAddTask, reorderTasks } = useAppActions();
   const particles = useContext(ParticleContext);
-  const taskRefsRef = useRef<Map<number, HTMLDivElement>>(new Map());
   const col = COLS[status];
   const tasks = state.tasks.filter(t => t.status === status);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    if (draggedTaskId !== null) {
-      const draggedTask = state.tasks.find(t => t.id === draggedTaskId);
-
-      if (draggedTask?.status === status) {
-        // Within-column reordering
-        const columnTasks = state.tasks.filter(t => t.status === status);
-        const draggedIndex = columnTasks.findIndex(t => t.id === draggedTaskId);
-
-        // Find which task we're dropping over
-        let insertBeforeIndex = columnTasks.length;
-        for (let i = 0; i < columnTasks.length; i++) {
-          const el = taskRefsRef.current.get(columnTasks[i].id);
-          if (!el) continue;
-          const rect = el.getBoundingClientRect();
-          const centerY = (rect.top + rect.bottom) / 2;
-          if (e.clientY < centerY) {
-            insertBeforeIndex = i;
-            break;
-          }
-        }
-
-        // Only reorder if position changed
-        if (insertBeforeIndex !== draggedIndex && insertBeforeIndex !== draggedIndex + 1) {
-          // Reorder within column
-          const reorderedColumnTasks = [...columnTasks];
-          const [draggedItem] = reorderedColumnTasks.splice(draggedIndex, 1);
-          reorderedColumnTasks.splice(insertBeforeIndex > draggedIndex ? insertBeforeIndex - 1 : insertBeforeIndex, 0, draggedItem);
-
-          // Rebuild full task array with new column order
-          const allTasksIds = state.tasks.map(t => t.id);
-          const newTaskIds = allTasksIds.filter(id => !columnTasks.some(t => t.id === id)).concat(reorderedColumnTasks.map(t => t.id));
-
-          // Map back to full objects
-          const newTasks = newTaskIds.map(id => state.tasks.find(t => t.id === id)!);
-          reorderTasks(newTasks);
-        }
-      } else {
-        // Between-column move
-        moveTask(draggedTaskId, status);
-        if (status === 'done' && particles) {
-          const cx = window.innerWidth / 2;
-          const cy = window.innerHeight * 0.5;
-          particles.confetti(cx, cy, { count: 60, power: 8 });
-        }
-      }
-      onDragEnd();
-    }
-  };
+  const { setNodeRef, isOver } = useDroppable({
+    id: status,
+  });
 
   return (
     <section
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      ref={setNodeRef}
       style={{
         background: col.tint,
         borderRadius: '26px',
         padding: '14px',
         border: '2px solid #fff',
-        boxShadow: '0 14px 34px rgba(74, 59, 82, 0.07)',
+        boxShadow: isOver ? '0 14px 34px rgba(74, 59, 82, 0.2)' : '0 14px 34px rgba(74, 59, 82, 0.07)',
         minHeight: '220px',
+        transition: 'box-shadow 0.2s ease',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px 14px' }}>
@@ -148,29 +98,25 @@ export function TaskColumn({
         </div>
       </div>
 
-      <div className="ff-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto' }}>
-        {tasks.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '22px 12px 26px', color: '#B7A6BE', fontSize: '13px', fontWeight: 700, lineHeight: '1.4' }}>
-            {col.emptyMsg}
-          </div>
-        ) : (
-          tasks.map(task => (
-            <div
-              key={task.id}
-              ref={(el) => {
-                if (el) taskRefsRef.current.set(task.id, el);
-              }}
-            >
+      <SortableContext items={tasks.map(t => `task-${t.id}`)} strategy={verticalListSortingStrategy}>
+        <div className="ff-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'scroll', scrollbarGutter: 'stable' }}>
+          {tasks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '22px 12px 26px', color: '#B7A6BE', fontSize: '13px', fontWeight: 700, lineHeight: '1.4' }}>
+              {col.emptyMsg}
+            </div>
+          ) : (
+            tasks.map(task => (
               <TaskCard
+                key={task.id}
                 task={task}
                 columnIndex={columnIndex}
                 onDragStart={() => onDragStart(task.id)}
                 onDragEnd={onDragEnd}
               />
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      </SortableContext>
     </section>
   );
 }
