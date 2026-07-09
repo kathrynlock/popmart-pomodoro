@@ -1,11 +1,8 @@
-
-import { useContext } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { TaskStatus } from '../types';
 import { TaskCard } from './TaskCard';
 import { useAppState, useAppActions } from '../context/AppContext';
-import { ParticleContext } from '../context/ParticleContext';
 
 interface TaskColumnProps {
   status: TaskStatus;
