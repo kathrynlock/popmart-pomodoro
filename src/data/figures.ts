@@ -1,0 +1,130 @@
+import type { FigureSet } from '../types';
+
+export const FIGURE_SETS: FigureSet[] = [
+  {
+    id: 'nyota-seasons',
+    name: 'Nyota — I Am the Seasons',
+    series: 'Series 08',
+    active: true,
+    figures: [
+      {
+        id: 'ny-genesis',
+        name: 'Genesis',
+        rarity: 'common',
+        color: '#FDE7C4',
+        img: 'https://global-static.popmart.com/globalAdmin/1752833937097____genesis____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-wisteria',
+        name: 'Spring Wisteria',
+        rarity: 'common',
+        color: '#F0DCF4',
+        img: 'https://global-static.popmart.com/globalAdmin/1752833957975____spring-wisteria____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-bamboo',
+        name: 'Bamboo After Rain',
+        rarity: 'common',
+        color: '#DCEFD3',
+        img: 'https://global-static.popmart.com/globalAdmin/1752833950353____bamboo-after-rain____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-summer',
+        name: 'Summer Murmurs',
+        rarity: 'common',
+        color: '#D3ECEF',
+        img: 'https://global-static.popmart.com/globalAdmin/1752833976597____summer-murmurs____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-skies',
+        name: 'Blue Skies Ahead',
+        rarity: 'common',
+        color: '#D6E7F7',
+        img: 'https://global-static.popmart.com/globalAdmin/1752833984745____blue-skies-ahead____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-sunseeker',
+        name: 'Sunseeker',
+        rarity: 'common',
+        color: '#FCEFAE',
+        img: 'https://global-static.popmart.com/globalAdmin/1752833966923____sun-seeker____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-glow',
+        name: 'Autumn Glow',
+        rarity: 'common',
+        color: '#FBDCB0',
+        img: 'https://global-static.popmart.com/globalAdmin/1752834040863____autumn-glow____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-hidden',
+        name: 'Hidden In Autumn',
+        rarity: 'common',
+        color: '#F3CFAE',
+        img: 'https://global-static.popmart.com/globalAdmin/1752834001608____hidden-in-autumn____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-forest',
+        name: 'Forest Tapestry',
+        rarity: 'common',
+        color: '#CFE3C8',
+        img: 'https://global-static.popmart.com/globalAdmin/1752834013250____forest-tapestry____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-snowfall',
+        name: 'Snowfall Bliss',
+        rarity: 'common',
+        color: '#E4F1F8',
+        img: 'https://global-static.popmart.com/globalAdmin/1752834032524____snowfall-bliss____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-leisure',
+        name: 'Life Of Leisure',
+        rarity: 'common',
+        color: '#EFE8F5',
+        img: 'https://global-static.popmart.com/globalAdmin/1752833993401____life-of-leisure____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-cloud',
+        name: 'Cloudwatcher',
+        rarity: 'common',
+        color: '#DCE3EE',
+        img: 'https://global-static.popmart.com/globalAdmin/1752834025856____cloudwatcher____.png',
+        weight: 12,
+      },
+      {
+        id: 'ny-secret',
+        name: 'Walking Into Spring',
+        rarity: 'secret',
+        color: '#FFE9F0',
+        img: 'https://global-static.popmart.com/globalAdmin/1752834050073____secret_waiking-into-spring____.png',
+        weight: 1,
+      },
+    ],
+  },
+];
+
+export const BLIND_BOXES = [
+  { id: 0, color: '#FFB8D6', name: 'blush' },
+  { id: 1, color: '#8FC4EE', name: 'sky' },
+  { id: 2, color: '#F4E77E', name: 'butter' },
+  { id: 3, color: '#BEE887', name: 'meadow' },
+  { id: 4, color: '#D8C2F2', name: 'lilac' },
+  { id: 5, color: '#FFBC7E', name: 'apricot' },
+];
+
+export const CONFETTI_PALETTE = [
+  '#FFCBE1', '#F5A0C4', '#FFDAB5', '#FFC58A', '#FAF2A8', '#FFEB7A',
+  '#DBF0BA', '#CFF295', '#D0E6F7', '#A4D1F2', '#E5D8F2', '#D3B6F0',
+];
