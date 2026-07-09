@@ -26,11 +26,9 @@ export function TaskColumn({
   columnIndex,
   onDragStart,
   onDragEnd,
-  draggedTaskId,
 }: TaskColumnProps) {
   const { state } = useAppState();
-  const { moveTask, openAddTask, reorderTasks } = useAppActions();
-  const particles = useContext(ParticleContext);
+  const { openAddTask } = useAppActions();
   const col = COLS[status];
   const tasks = state.tasks.filter(t => t.status === status);
 
