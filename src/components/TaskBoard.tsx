@@ -12,7 +12,6 @@ export function TaskBoard() {
   const [hoveredColumn, setHoveredColumn] = useState<TaskStatus | null>(null);
   const { state } = useAppState();
   const { moveTask, reorderTasks } = useAppActions();
-  const particles = useContext(ParticleContext);
   const statuses: TaskStatus[] = ['backlog', 'progress', 'done'];
 
   const sensors = useSensors(
@@ -34,8 +33,7 @@ export function TaskBoard() {
   };
 
 
-  const handleDragMove = (event: any) => {
-    const { active, over } = event;
+  const handleDragMove = ({ active, over }: any) => {
 
     if (!over) {
       setHoveredColumn(null);
@@ -136,7 +134,6 @@ export function TaskBoard() {
             columnIndex={idx}
             draggedTaskId={draggedTaskId}
             hoveredColumn={hoveredColumn}
-            allTasks={state.tasks}
             onDragStart={(id) => setDraggedTaskId(id)}
             onDragEnd={() => setDraggedTaskId(null)}
           />

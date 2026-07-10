@@ -9,7 +9,6 @@ interface TaskColumnProps {
   columnIndex: number;
   draggedTaskId: number | null;
   hoveredColumn: TaskStatus | null;
-  allTasks: any[];
   onDragStart: (id: number) => void;
   onDragEnd: () => void;
 }
@@ -25,7 +24,6 @@ export function TaskColumn({
   columnIndex,
   draggedTaskId,
   hoveredColumn,
-  allTasks,
   onDragStart,
   onDragEnd,
 }: TaskColumnProps) {
