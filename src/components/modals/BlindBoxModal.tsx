@@ -281,9 +281,11 @@ export function BlindBoxModal() {
               {fig.name}
             </div>
 
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '8px', padding: '5px 14px', borderRadius: '16px', background: isSecret ? '#FFE7A8' : '#F4EEF8', color: isSecret ? '#A9711F' : '#9B84A6', fontWeight: 900, fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              {rarityText[fig.rarity]}
-            </div>
+            {fig.rarity !== 'common' && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '8px', padding: '5px 14px', borderRadius: '16px', background: isSecret ? '#FFE7A8' : '#F4EEF8', color: isSecret ? '#A9711F' : '#9B84A6', fontWeight: 900, fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                {rarityText[fig.rarity]}
+              </div>
+            )}
 
             <div style={{ fontSize: '14px', color: '#A695AE', fontWeight: 700, marginTop: '12px' }}>
               {revealNotes[fig.rarity]}
