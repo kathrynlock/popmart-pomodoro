@@ -96,6 +96,7 @@ export function TaskBoard() {
 
                 // Trigger confetti only on actual drop to done
                 if (targetStatus === 'done' && particles) {
+                  console.log('🎉 Confetti triggered on DROP to done (insert before)');
                   const cx = window.innerWidth / 2;
                   const cy = window.innerHeight * 0.5;
                   particles.confetti(cx, cy, { count: 60, power: 8 });
@@ -108,6 +109,7 @@ export function TaskBoard() {
 
             // Trigger confetti only on actual drop to done
             if (targetStatus === 'done' && particles) {
+              console.log('🎉 Confetti triggered on DROP to done (end of column)');
               const cx = window.innerWidth / 2;
               const cy = window.innerHeight * 0.5;
               particles.confetti(cx, cy, { count: 60, power: 8 });

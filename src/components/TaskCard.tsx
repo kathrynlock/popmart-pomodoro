@@ -82,6 +82,7 @@ export function TaskCard({ task, columnIndex, onDragStart, onDragEnd }: TaskCard
   const handleMoveToNext = () => {
     const ns = TASK_ORDER[columnIndex + 1];
     if (ns === 'done' && particles) {
+      console.log('🎉 Confetti triggered from BUTTON CLICK');
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight * 0.5;
       particles.confetti(cx, cy, { count: 60, power: 8 });
