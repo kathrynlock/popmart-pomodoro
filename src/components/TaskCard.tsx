@@ -164,7 +164,10 @@ export function TaskCard({ task, columnIndex, onDragStart, onDragEnd }: TaskCard
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px', marginTop: '10px' }}>
           {canBack && (
             <button
-              onClick={() => moveTask(task.id, prevStatus)}
+              onClick={(e) => {
+                e.stopPropagation();
+                moveTask(task.id, prevStatus);
+              }}
               style={{
                 border: 'none',
                 cursor: 'pointer',
@@ -182,7 +185,10 @@ export function TaskCard({ task, columnIndex, onDragStart, onDragEnd }: TaskCard
           )}
           {canForward && (
             <button
-              onClick={handleMoveToNext}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveToNext();
+              }}
               style={{
                 border: 'none',
                 cursor: 'pointer',
