@@ -8,6 +8,8 @@ interface TaskColumnProps {
   status: TaskStatus;
   columnIndex: number;
   draggedTaskId: number | null;
+  hoveredColumn: TaskStatus | null;
+  allTasks: any[];
   onDragStart: (id: number) => void;
   onDragEnd: () => void;
 }
@@ -21,6 +23,9 @@ const COLS = {
 export function TaskColumn({
   status,
   columnIndex,
+  draggedTaskId,
+  hoveredColumn,
+  allTasks,
   onDragStart,
   onDragEnd,
 }: TaskColumnProps) {
@@ -28,6 +33,9 @@ export function TaskColumn({
   const { openAddTask } = useAppActions();
   const col = COLS[status];
   const tasks = state.tasks.filter(t => t.status === status);
+  const draggedTask = draggedTaskId ? state.tasks.find(t => t.id === draggedTaskId) : null;
+  const isFromDifferentColumn = draggedTask && draggedTask.status !== status;
+  const isHovered = hoveredColumn === status && isFromDifferentColumn;
 
   const { setNodeRef, isOver } = useDroppable({
     id: status,
@@ -43,6 +51,9 @@ export function TaskColumn({
         border: '2px solid #fff',
         boxShadow: isOver ? '0 14px 34px rgba(74, 59, 82, 0.2)' : '0 14px 34px rgba(74, 59, 82, 0.07)',
         minHeight: '220px',
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
         transition: 'box-shadow 0.2s ease',
       }}
     >
@@ -93,25 +104,40 @@ export function TaskColumn({
         </div>
       </div>
 
-      <SortableContext items={tasks.map(t => `task-${t.id}`)} strategy={verticalListSortingStrategy}>
-        <div className="ff-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'scroll', scrollbarGutter: 'stable' }}>
-          {tasks.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '22px 12px 26px', color: '#B7A6BE', fontSize: '13px', fontWeight: 700, lineHeight: '1.4' }}>
-              {col.emptyMsg}
-            </div>
-          ) : (
-            tasks.map(task => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                columnIndex={columnIndex}
-                onDragStart={() => onDragStart(task.id)}
-                onDragEnd={onDragEnd}
-              />
-            ))
-          )}
-        </div>
-      </SortableContext>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'relative', flex: 1, minHeight: 0 }}>
+        <SortableContext items={tasks.map(t => `task-${t.id}`)} strategy={verticalListSortingStrategy}>
+          <div className="ff-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minHeight: 0, overflowY: 'scroll', scrollbarGutter: 'stable' }}>
+            {tasks.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '22px 12px 26px', color: '#B7A6BE', fontSize: '13px', fontWeight: 700, lineHeight: '1.4' }}>
+                {col.emptyMsg}
+              </div>
+            ) : (
+              tasks.map(task => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  columnIndex={columnIndex}
+                  onDragStart={() => onDragStart(task.id)}
+                  onDragEnd={onDragEnd}
+                />
+              ))
+            )}
+          </div>
+        </SortableContext>
+        {isHovered && (
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '18px',
+              padding: '14px 14px 12px',
+              boxShadow: '0 6px 16px rgba(74, 59, 82, 0.09)',
+              border: '2px dashed #D8C7DE',
+              minHeight: '60px',
+              opacity: 0.6,
+            }}
+          />
+        )}
+      </div>
     </section>
   );
 }
