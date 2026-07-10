@@ -1,19 +1,16 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { DndContext, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from '@dnd-kit/core';
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { useAppState, useAppActions } from '../context/AppContext';
 import { useFigures } from '../hooks/useFigures';
+import { ShelfItem } from './ShelfItem';
 
 export function Shelf() {
   const { state } = useAppState();
-  const { toggleCollection, toggleFigureDetail, reorderShelf } = useAppActions();
+  const { toggleCollection, reorderShelf } = useAppActions();
   const { findFigure } = useFigures();
-  const shelfContainerRef = useRef<HTMLDivElement>(null);
-  const shelfRefsMap = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [ghostPos, setGhostPos] = useState<{ x: number; y: number } | null>(null);
-  const dragRef = useRef<{ id: string; startX: number; startY: number; moved: boolean } | null>(null);
-  const justDraggedRef = useRef(false);
-  const moveHandlerRef = useRef<((e: PointerEvent) => void) | null>(null);
-  const upHandlerRef = useRef<((e: PointerEvent) => void) | null>(null);
+  const [draggedFigId, setDraggedFigId] = useState<string | null>(null);
+  const [draggedFigData, setDraggedFigData] = useState<any>(null);
 
   const shelfFigures = state.displayed
     .filter(id => (state.collection[id] || 0) > 0)
@@ -27,121 +24,58 @@ export function Shelf() {
 
   const isEmpty = shelfFigures.length === 0;
 
-  const slideReorder = (oldOrder: string[], newOrder: string[]) => {
-    // Capture old positions BEFORE setState
-    const oldRects = new Map<string, DOMRect>();
-    oldOrder.forEach(id => {
-      const el = shelfRefsMap.current.get(id);
-      if (el) oldRects.set(id, el.getBoundingClientRect());
-    });
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 0,
+      },
+    })
+  );
 
-    // Update order
-    reorderShelf(newOrder);
-
-    // Animate after state update
-    setTimeout(() => {
-      newOrder.forEach(id => {
-        if (id === dragRef.current?.id) return; // Skip dragging item
-
-        const el = shelfRefsMap.current.get(id);
-        const oldRect = oldRects.get(id);
-        if (!el || !oldRect) return;
-
-        const newRect = el.getBoundingClientRect();
-        const dx = oldRect.left - newRect.left;
-        const dy = oldRect.top - newRect.top;
-
-        if (dx !== 0 || dy !== 0) {
-          el.style.transition = 'none';
-          el.style.transform = `translate(${dx}px, ${dy}px)`;
-
-          requestAnimationFrame(() => {
-            el.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1)';
-            el.style.transform = '';
-          });
-        }
-      });
-    }, 0);
+  const handleDragStart = (event: any) => {
+    const figIdStr = event.active.id as string;
+    if (figIdStr.startsWith('shelf-')) {
+      const figId = figIdStr.replace('shelf-', '');
+      const fig = shelfFigures.find(f => f.id === figId);
+      setDraggedFigId(figId);
+      setDraggedFigData(fig);
+    }
   };
 
-  const handlePointerDown = (figId: string, e: React.PointerEvent<HTMLButtonElement>) => {
-    dragRef.current = {
-      id: figId,
-      startX: e.clientX,
-      startY: e.clientY,
-      moved: false,
-    };
-    setDraggingId(figId);
-    setGhostPos(null);
-    justDraggedRef.current = false;
+  const handleDragMove = (event: any) => {
+    const { active, over } = event;
 
-    moveHandlerRef.current = (moveEvent: PointerEvent) => {
-      if (!dragRef.current) return;
+    if (!over) return;
 
-      const dx = moveEvent.clientX - dragRef.current.startX;
-      const dy = moveEvent.clientY - dragRef.current.startY;
+    const overIdStr = over.id as string;
+    const figIdStr = active.id as string;
 
-      if (Math.abs(dx) + Math.abs(dy) > 6) {
-        dragRef.current.moved = true;
-        justDraggedRef.current = true;
-        setGhostPos({ x: moveEvent.clientX, y: moveEvent.clientY });
+    if (!figIdStr.startsWith('shelf-')) return;
+
+    const figId = figIdStr.replace('shelf-', '');
+
+    if (overIdStr.startsWith('shelf-')) {
+      const overFigId = overIdStr.replace('shelf-', '');
+      if (figId === overFigId) return;
+
+      const fullOrder = shelfFigures.map(f => `shelf-${f.id}`);
+      const fromIndex = fullOrder.findIndex(id => id === figIdStr);
+      const toIndex = fullOrder.findIndex(id => id === overIdStr);
+
+      if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+        const reordered = [...fullOrder];
+        const [movedId] = reordered.splice(fromIndex, 1);
+        reordered.splice(toIndex, 0, movedId);
+
+        const newOrder = reordered.map(id => id.replace('shelf-', ''));
+        reorderShelf(newOrder);
       }
+    }
+  };
 
-      if (dragRef.current.moved) {
-        setGhostPos({ x: moveEvent.clientX, y: moveEvent.clientY });
-
-        if (shelfContainerRef.current) {
-          const container = shelfContainerRef.current;
-          const crect = container.getBoundingClientRect();
-
-          if (moveEvent.clientY < crect.top - 50 || moveEvent.clientY > crect.bottom + 50) return;
-
-          const fullOrder = shelfFigures.map(f => f.id);
-          const others = fullOrder.filter(id => id !== dragRef.current!.id);
-          let insertPos = others.length;
-
-          for (let i = 0; i < others.length; i++) {
-            const el = shelfRefsMap.current.get(others[i]);
-            if (!el) continue;
-            const r = el.getBoundingClientRect();
-            const centerX = (r.left + r.right) / 2;
-            if (moveEvent.clientX < centerX) {
-              insertPos = i;
-              break;
-            }
-          }
-
-          const newOrder = others.slice();
-          newOrder.splice(insertPos, 0, dragRef.current.id);
-          const changed = newOrder.some((id, i) => id !== fullOrder[i]);
-
-          if (changed) {
-            slideReorder(fullOrder, newOrder);
-          }
-        }
-      }
-    };
-
-    upHandlerRef.current = () => {
-      if (dragRef.current && !dragRef.current.moved) {
-        // It was a click, not a drag
-        toggleFigureDetail(figId);
-      }
-
-      if (moveHandlerRef.current) {
-        window.removeEventListener('pointermove', moveHandlerRef.current);
-      }
-      if (upHandlerRef.current) {
-        window.removeEventListener('pointerup', upHandlerRef.current);
-      }
-
-      dragRef.current = null;
-      setDraggingId(null);
-      setGhostPos(null);
-    };
-
-    window.addEventListener('pointermove', moveHandlerRef.current);
-    window.addEventListener('pointerup', upHandlerRef.current);
+  const handleDragEnd = () => {
+    setDraggedFigId(null);
+    setDraggedFigData(null);
   };
 
   return (
@@ -196,108 +130,59 @@ export function Shelf() {
             </button>
           </div>
         ) : (
-          <>
-            {ghostPos && draggingId && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={shelfFigures.map(f => `shelf-${f.id}`)} strategy={horizontalListSortingStrategy}>
               <div
-                style={{
-                  position: 'fixed',
-                  left: `${ghostPos.x - 45}px`,
-                  top: `${ghostPos.y - 50}px`,
-                  width: '90px',
-                  pointerEvents: 'none',
-                  zIndex: 50,
-                  opacity: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '2px',
-                  padding: '0 6px',
-                }}
+                style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', flexWrap: 'wrap', gap: '6px', padding: '6px 6px 6px', position: 'relative' }}
               >
-                {shelfFigures.map(fig => {
-                  if (fig.id !== draggingId) return null;
-                  return (
-                    <div key={fig.id} style={{ width: '100%' }}>
-                      <div style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 9px 6px rgba(74,59,82,.22))' }}>
-                        <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-                          <img
-                            src={fig.img}
-                            alt={fig.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.35)' }}
-                          />
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '11px', fontWeight: 800, color: '#9A7550', maxWidth: '88px', textAlign: 'center', lineHeight: '1.1', height: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {fig?.name}
-                      </div>
-                      {fig && fig.count > 1 && (
-                        <span style={{ position: 'absolute', top: '-2px', right: 0, background: '#fff', borderRadius: '9px', padding: '0 5px', fontWeight: 900, fontSize: '10px', color: '#8C74A0', boxShadow: '0 2px 6px rgba(74, 59, 82, 0.16)' }}>
-                          ×{fig.count}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            <div
-              ref={shelfContainerRef}
-              style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', flexWrap: 'wrap', gap: '6px', padding: '6px 6px 6px', position: 'relative' }}
-            >
-              {(shelfFigures as any[]).map(fig => {
-                const isDragging = draggingId === fig.id;
-
-                return (
-                  <button
+                {shelfFigures.map(fig => (
+                  <ShelfItem
                     key={fig.id}
-                    ref={(el) => {
-                      if (el) shelfRefsMap.current.set(fig.id, el);
-                    }}
-                    onPointerDown={(e) => handlePointerDown(fig.id, e)}
-                    style={{
-                      position: 'relative',
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: draggingId === fig.id ? 'grabbing' : 'grab',
-                      display: isDragging ? 'none' : 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '2px',
-                      padding: '0 6px',
-                      touchAction: 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (draggingId !== fig.id) {
-                        e.currentTarget.style.transform = 'translateY(-6px)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = '';
-                    }}
-                  >
-                    <div style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 9px 6px rgba(74,59,82,.22))' }}>
-                      <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-                        <img
-                          src={fig.img}
-                          alt={fig.name}
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.35)' }}
-                        />
-                      </div>
+                    figure={fig}
+                    isDragging={draggedFigId === fig.id}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+            <DragOverlay>
+              {draggedFigData ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '2px',
+                    padding: '0 6px',
+                    opacity: 0.95,
+                  }}
+                >
+                  <div style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 9px 6px rgba(74,59,82,.22))' }}>
+                    <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                      <img
+                        src={draggedFigData.img}
+                        alt={draggedFigData.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.35)' }}
+                      />
                     </div>
-                    <div style={{ fontSize: '11px', fontWeight: 800, color: '#9A7550', maxWidth: '88px', textAlign: 'center', lineHeight: '1.1', height: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {fig?.name}
-                    </div>
-                    {fig && fig.count > 1 && (
-                      <span style={{ position: 'absolute', top: '-2px', right: 0, background: '#fff', borderRadius: '9px', padding: '0 5px', fontWeight: 900, fontSize: '10px', color: '#8C74A0', boxShadow: '0 2px 6px rgba(74, 59, 82, 0.16)' }}>
-                        ×{fig.count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </>
+                  </div>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#9A7550', maxWidth: '88px', textAlign: 'center', lineHeight: '1.1', height: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {draggedFigData.name}
+                  </div>
+                  {draggedFigData.count > 1 && (
+                    <span style={{ position: 'absolute', top: '-2px', right: 0, background: '#fff', borderRadius: '9px', padding: '0 5px', fontWeight: 900, fontSize: '10px', color: '#8C74A0', boxShadow: '0 2px 6px rgba(74, 59, 82, 0.16)' }}>
+                      ×{draggedFigData.count}
+                    </span>
+                  )}
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         )}
       </div>
       <div style={{ width: '100%', height: '22px', background: 'linear-gradient(180deg, #ECD4B2, #DFC095)', boxShadow: 'inset 0 4px 6px rgba(255, 255, 255, 0.55), 0 6px 16px rgba(74, 59, 82, 0.10)' }} />
