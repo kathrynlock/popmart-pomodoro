@@ -1,8 +1,7 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors, closestCorners, DragOverlay } from '@dnd-kit/core';
 import type { TaskStatus } from '../types';
 import { useAppState, useAppActions } from '../context/AppContext';
-import { ParticleContext } from '../context/ParticleContext';
 import { TaskColumn } from './TaskColumn';
 import { TaskCard } from './TaskCard';
 
@@ -112,7 +111,7 @@ export function TaskBoard() {
     }
   };
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = () => {
     setHoveredColumn(null);
     setDraggedTaskId(null);
     setDraggedTaskData(null);
