@@ -21,7 +21,7 @@ const COLS = {
 
 const TASK_ORDER: TaskStatus[] = ['backlog', 'progress', 'done'];
 
-export function TaskCard({ task, columnIndex, onDragStart, onDragEnd }: TaskCardProps) {
+export function TaskCard({ task, columnIndex }: TaskCardProps) {
   const { deleteTask, moveTask } = useAppActions();
   const { state } = useAppState();
   const particles = useContext(ParticleContext);
@@ -46,14 +46,6 @@ export function TaskCard({ task, columnIndex, onDragStart, onDragEnd }: TaskCard
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-
-  useEffect(() => {
-    if (isDragging) {
-      onDragStart();
-    } else {
-      onDragEnd();
-    }
-  }, [isDragging, onDragStart, onDragEnd]);
 
   useEffect(() => {
     const el = cardRef.current;

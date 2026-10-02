@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAppState, useAppActions } from '../../context/AppContext';
 import { useFigures } from '../../hooks/useFigures';
 import { useParticleEffects } from '../../hooks/useParticleEffects';
@@ -6,11 +7,13 @@ import { BLIND_BOXES } from '../../data/figures';
 export function BlindBoxModal() {
   const { state } = useAppState();
   const { toggleBlindbox, toggleCollection, blindBoxShake, blindBoxReveal, blindBoxNext } = useAppActions();
-  const { pickRandomFigure } = useFigures();
+  const { pickRandomFigure, activeSets } = useFigures();
+  const [hoveredSetId, setHoveredSetId] = useState<string | null>(null);
+  const hoveredSet = activeSets.find(set => set.id === hoveredSetId);
   const { confetti, sparkles } = useParticleEffects();
   const reduceMotionRef = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const handleOpenBox = () => {
+  const handleOpenBox = (setId: string) => {
     blindBoxShake();
 
     const cx = window.innerWidth / 2;
@@ -26,7 +29,7 @@ export function BlindBoxModal() {
     setTimeout(() => {
       if (sparkleInterval) clearInterval(sparkleInterval);
 
-      const fig = pickRandomFigure();
+      const fig = pickRandomFigure(setId);
       blindBoxReveal(fig);
 
       const isSecret = fig.rarity === 'secret';
@@ -58,8 +61,7 @@ export function BlindBoxModal() {
     rare: 'ooh, a rare one — lucky you!',
     secret: 'incredibly rare. this one shimmers!',
   };
-  // When revealing, subtract 1 because current box is still in pending array
-  const pendingCount = state.bbPhase === 'reveal' ? Math.max(0, state.pending.length - 1) : state.pending.length;
+  const pendingCount = state.pending.length;
 
   return (
     <div
@@ -115,53 +117,92 @@ export function BlindBoxModal() {
 
         {state.bbPhase === 'ready' && (
           <div>
-            <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '1.6px', textTransform: 'uppercase', color: '#C6AECD' }}>
-              nyota · series 08
-            </div>
-            <div style={{ fontFamily: 'Fredoka, sans-serif', fontWeight: 600, fontSize: '28px', marginTop: '4px' }}>
+            <div style={{ fontFamily: 'Fredoka, sans-serif', fontWeight: 600, fontSize: '28px' }}>
               your blind box is here!
             </div>
             <div style={{ fontSize: '14px', color: '#A695AE', fontWeight: 700, marginTop: '4px' }}>
-              give it a tap to meet who's inside
+              pick a box to open
             </div>
 
-            <button
-              onClick={handleOpenBox}
-              style={{ border: 'none', cursor: 'pointer', background: 'transparent', marginTop: '28px', marginBottom: '12px', display: 'block', padding: 0, marginLeft: 'auto', marginRight: 'auto' }}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                gap: '14px',
+                marginTop: '20px',
+                maxHeight: '380px',
+                overflowY: 'auto',
+                padding: '4px',
+              }}
             >
-              <div style={{ position: 'relative', width: '150px', height: '138px' }}>
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: '-18px',
-                    borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(255,197,138,.5), transparent 70%)',
-                    filter: 'blur(6px)',
-                    animation: 'ffBreathe 2.4s ease-in-out infinite',
-                  }}
-                />
-                <div
-                  style={{
-                    position: 'relative',
-                    width: '150px',
-                    height: '138px',
-                    borderRadius: '24px',
-                    background: curBox.color,
-                    boxShadow: '0 16px 30px rgba(74, 59, 82, 0.2)',
-                    animation: 'ffWiggle 2.4s ease-in-out infinite',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
+              {activeSets.map(set => (
+                <button
+                  key={set.id}
+                  onClick={() => handleOpenBox(set.id)}
+                  title={`open a ${set.name} box`}
+                  style={{ border: 'none', cursor: 'pointer', background: 'transparent', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', transition: 'filter 0.15s ease', filter: hoveredSetId === set.id ? 'brightness(1.06) drop-shadow(0 6px 10px rgba(74, 59, 82, 0.2))' : 'none' }}
+                  onMouseEnter={() => setHoveredSetId(set.id)}
+                  onMouseLeave={() => setHoveredSetId(null)}
+                  onFocus={() => setHoveredSetId(set.id)}
+                  onBlur={() => setHoveredSetId(null)}
                 >
-                  <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '26px', marginLeft: '-13px', background: 'rgba(255,255,255,.7)' }} />
-                  <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '26px', marginTop: '-13px', background: 'rgba(255,255,255,.7)' }} />
-                </div>
-              </div>
-            </button>
+                  {set.box ? (
+                    <img
+                      src={set.box}
+                      alt={set.name}
+                      style={{ width: '100%', aspectRatio: '1', objectFit: 'contain', mixBlendMode: 'multiply' }}
+                    />
+                  ) : (
+                    <div style={{ width: '100%', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ position: 'relative', width: '62%', height: '58%', borderRadius: '16px', background: curBox.color, boxShadow: '0 10px 20px rgba(74, 59, 82, 0.2)' }}>
+                        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: '16px', marginLeft: '-8px', background: 'rgba(255,255,255,.7)' }} />
+                        <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '16px', marginTop: '-8px', background: 'rgba(255,255,255,.7)' }} />
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#8C74A0', lineHeight: 1.25 }}>{set.name.replace(/^Nyota\s*[—×-]?\s*/, '')}</div>
+                </button>
+              ))}
+            </div>
 
-            <div style={{ fontSize: '13px', color: '#C3B1CB', fontWeight: 800, letterSpacing: '0.5px' }}>
-              tap to open
+            <div style={{ marginTop: '16px', height: '150px', boxSizing: 'border-box', padding: '12px 14px', borderRadius: '20px', background: '#FBF4FA', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              {hoveredSet ? (
+                <>
+                  <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '1.4px', textTransform: 'uppercase', color: '#C6AECD' }}>
+                    who could be inside
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px' }}>
+                    {hoveredSet.figures.map(f => (
+                      <div
+                        key={f.id}
+                        title={f.rarity === 'secret' ? 'secret figure' : f.name}
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '14px',
+                          background: f.rarity === 'secret' ? 'linear-gradient(135deg, #FFE7A8, #FFD27A)' : f.color,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          overflow: 'hidden',
+                          fontFamily: 'Fredoka, sans-serif',
+                          fontWeight: 600,
+                          fontSize: '22px',
+                          color: '#A9711F',
+                        }}
+                      >
+                        {f.rarity === 'secret' ? (
+                          '?'
+                        ) : (
+                          <img src={f.img} alt={f.name} style={{ width: '100%', height: '100%', objectFit: 'contain', transform: 'scale(1.3)' }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: '13px', color: '#C3B1CB', fontWeight: 800 }}>hover a box to see who's inside</div>
+              )}
             </div>
           </div>
         )}

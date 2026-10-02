@@ -1,7 +1,7 @@
 import { useAppState, useAppActions } from '../context/AppContext';
 
 interface HeaderProps {
-  userName: string;
+  userName?: string;
 }
 
 function formatTime(seconds: number): string {
@@ -10,22 +10,24 @@ function formatTime(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-export function Header({ userName = 'kate' }: HeaderProps) {
+export function Header({ userName }: HeaderProps) {
   const { state } = useAppState();
   const { toggleSessionPopup, toggleTimer, resetTimer, openBlindbox } = useAppActions();
   const timer = state.timer;
   const pendingCount = state.pending.length;
 
-  let greetingMain = `hey there, ${userName}!`;
+  const nameSuffix = userName ? `, ${userName}` : '';
+
+  let greetingMain = `hey there${nameSuffix}!`;
   let greetingSub = 'what shall we get done today?';
 
   if (timer.active && timer.phase === 'break') {
-    greetingMain = `breathe, ${userName}`;
+    greetingMain = `breathe${nameSuffix}`;
     greetingSub = 'stretch, sip something, rest your eyes';
   } else if (timer.active) {
     const progress = timer.total ? 1 - timer.left / timer.total : 0;
     if (progress < 0.25) {
-      greetingMain = `let's do this, ${userName}!`;
+      greetingMain = `let's do this${nameSuffix}!`;
       greetingSub = 'settle in and find your flow';
     } else if (progress < 0.5) {
       greetingMain = 'nice and steady…';

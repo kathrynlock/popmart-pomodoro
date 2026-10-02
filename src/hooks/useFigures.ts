@@ -10,8 +10,10 @@ export function useFigures() {
     return null;
   };
 
-  const pickRandomFigure = (): Figure => {
-    const activeSet = FIGURE_SETS.find(s => s.active) || FIGURE_SETS[0];
+  const activeSets = FIGURE_SETS.filter(s => s.active);
+
+  const pickRandomFigure = (setId?: string): Figure => {
+    const activeSet = activeSets.find(s => s.id === setId) || activeSets[0] || FIGURE_SETS[0];
     const total = activeSet.figures.reduce((a, f) => a + f.weight, 0);
     let r = Math.random() * total;
     for (const f of activeSet.figures) {
@@ -20,5 +22,5 @@ export function useFigures() {
     return activeSet.figures[0];
   };
 
-  return { findFigure, pickRandomFigure, allSets: FIGURE_SETS };
+  return { findFigure, pickRandomFigure, allSets: FIGURE_SETS, activeSets };
 }

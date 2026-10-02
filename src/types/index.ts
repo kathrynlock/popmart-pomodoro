@@ -25,6 +25,7 @@ export interface FigureSet {
   name: string;
   series: string;
   active: boolean;
+  box?: string; // product image of the blind box
   figures: Figure[];
 }
 

@@ -223,6 +223,8 @@ function appReducer(state: AppState, action: Action): AppState {
         ...state,
         bbPhase: 'reveal',
         bbFigure: action.payload,
+        // the box is used up as soon as it's opened
+        pending: state.pending.slice(1),
         collection: {
           ...state.collection,
           [action.payload.id]: (state.collection[action.payload.id] || 0) + 1,
@@ -230,21 +232,15 @@ function appReducer(state: AppState, action: Action): AppState {
       };
 
     case 'BLIND_BOX_NEXT':
-      if (state.pending.length > 1) {
+      if (state.pending.length > 0) {
         return {
           ...state,
-          pending: state.pending.slice(1),
           bbPhase: 'ready',
           bbFigure: null,
-          bbBox: state.pending[1],
-        };
-      } else {
-        return {
-          ...state,
-          showBlindbox: false,
-          pending: state.pending.slice(1),
+          bbBox: state.pending[0],
         };
       }
+      return { ...state, showBlindbox: false };
 
     case 'LOAD_STATE':
       return { ...state, ...action.payload };
